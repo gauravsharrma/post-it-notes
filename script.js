@@ -54,10 +54,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function handleCredentialResponse(response) {
-    const data = jwt_decode(response.credential);
-    console.log(data);
-    // Proceed with application-specific logic
-}
+        const data = jwt_decode(response.credential);
+        console.log(data);
+        // Proceed with application-specific logic
+    }
 
     // Load saved notes when the page loads
     loadNotes();
