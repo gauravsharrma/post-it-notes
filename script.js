@@ -25,22 +25,8 @@ function logout() {
     location.reload();
 }
 
-// Load Google Drive API
 function loadGoogleDrive() {
-    if (typeof gapi === 'undefined') {
-        console.error("Google API (gapi) is not loaded yet.");
-        return;
-    }
-
-    gapi.load("client:auth2", async () => {
-        await gapi.client.init({
-            apiKey: API_KEY,
-            clientId: CLIENT_ID,
-            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-            scope: SCOPES,
-        });
-        console.log("Google Drive API Loaded!");
-    });
+    console.log("loadGoogleDrive function called, but is no longer needed.");
 }
 
 // Create Notes in UI
