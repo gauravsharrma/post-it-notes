@@ -1,90 +1,104 @@
-const CLIENT_ID = '720910107898-8id1nrg0o8q0unds8u90srtkuutn0837.apps.googleusercontent.com
-';
-
-function autoSaveNotes() {
-    console.log("Auto-saving notes...");
-    saveNotesToDrive();
-}
+const CLIENT_ID = '720910107898-8id1nrg0o8q0unds8u90srtkuutn0837.apps.googleusercontent.com';
+const CLIENT_SECRET = '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';
+const API_KEY = 'AIzaSyD5SHVtMFbCBYd9k04s705o3GgV5Om7e2Q';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file openid email profile';
 
 // Handle Google Sign-In Response
 function handleCredentialResponse(response) {
     console.log("Google Login Response:", response);
 
-    const userToken = response.credential;
-    document.cookie = `googleToken=${userToken}; path=/`;
+    const idToken = response.credential;
 
-    document.getElementById("logoutBtn").style.display = "block";
-    document.getElementById("saveNotes").style.display = "block";
+    fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            client_id: CLIENT_ID,
+            client_secret: CLIENT_SECRET,
+            redirect_uri: "https://post-it-notes.netlify.app/auth/google/callback",
+            grant_type: "authorization_code",
+            code: idToken
+        }),
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.access_token) {
+            document.cookie = `googleAccessToken=${data.access_token}; path=/`;
+            console.log("Access Token Received:", data.access_token);
+            loadGoogleDrive();
+        } else {
+            console.error("Failed to get Access Token:", data);
+        }
+    })
+    .catch(err => console.error("Token Exchange Error:", err));
 }
 
 // Logout function
 function logout() {
-    document.cookie = "googleToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    document.cookie = "googleAccessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     location.reload();
 }
 
-// Create Notes in UI
-function createNoteElement(text = "") {
-    const note = document.createElement("div");
-    note.classList.add("note");
-
-    const textarea = document.createElement("textarea");
-    textarea.value = text;
-    textarea.addEventListener("input", () => autoSaveNotes());
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.classList.add("delete-btn");
-    deleteBtn.innerText = "X";
-    deleteBtn.addEventListener("click", () => {
-        note.remove();
-        autoSaveNotes();
-    });
-
-    note.appendChild(textarea);
-    note.appendChild(deleteBtn);
-    document.getElementById("notesContainer").appendChild(note);
-}
-
-// Add new note
-document.getElementById("addNote").addEventListener("click", () => {
-    createNoteElement();
-});
-
-// Save notes manually
-document.getElementById("saveNotes").addEventListener("click", saveNotesToDrive);
-
-// Save notes to Google Drive
-async function saveNotesToDrive() {
-    const token = document.cookie.replace(/(?:(?:^|.*;\s*)googleToken\s*\=\s*([^;]*).*$)|^.*$/, "$1");
-
-    if (!token) {
-        console.error('User not authenticated!');
+// Load Google Drive API
+function loadGoogleDrive() {
+    if (typeof gapi === 'undefined') {
+        console.error("Google API (gapi) is not loaded yet.");
         return;
     }
 
-    const allNotes = document.querySelectorAll('.note textarea');
-    const notesArray = Array.from(allNotes).map((note) => note.value);
-
-    try {
-        const response = await fetch('/.netlify/functions/save-notes', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ token: token, notes: notesArray }),
+    gapi.load("client:auth2", async () => {
+        await gapi.client.init({
+            apiKey: API_KEY,
+            clientId: CLIENT_ID,
+            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+            scope: SCOPES,
         });
 
-        const data = await response.json();
-        if (response.ok) {
-            console.log('Notes saved to Google Drive:', data);
-            // Optionally provide user feedback here
+        console.log("Google Drive API Loaded!");
+    });
+}
+
+// Save notes to Google Drive
+async function saveNotesToDrive() {
+    const accessToken = document.cookie.split('; ').find(row => row.startsWith('googleAccessToken='))?.split('=')[1];
+
+    if (!accessToken) {
+        console.error("User not authenticated!");
+        alert("Please log in with Google to save notes.");
+        return;
+    }
+
+    const allNotes = document.querySelectorAll(".note textarea");
+    const notesArray = Array.from(allNotes).map(note => note.value);
+    const fileContent = notesArray.join("\n---\n");
+
+    const fileMetadata = {
+        name: "PostItNotes.txt",
+        mimeType: "text/plain"
+    };
+
+    const fileBlob = new Blob([fileContent], { type: 'text/plain' });
+    const form = new FormData();
+    form.append("metadata", new Blob([JSON.stringify(fileMetadata)], { type: "application/json" }));
+    form.append("file", fileBlob);
+
+    try {
+        const uploadResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+            body: form,
+        });
+
+        const uploadData = await uploadResponse.json();
+        if (uploadData.error) {
+            console.error("Google Drive Upload Error:", uploadData.error);
         } else {
-            console.error('Failed to save notes:', data);
-            // Optionally provide user feedback here
+            console.log("Notes saved to Google Drive:", uploadData);
         }
     } catch (error) {
-        console.error('Error saving notes:', error);
-        // Optionally provide user feedback here
+        console.error("Failed to save notes:", error);
     }
 }
 
