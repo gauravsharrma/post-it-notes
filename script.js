@@ -3,26 +3,15 @@ const API_KEY = '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';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 
-function initGoogleAuth() {
-    google.accounts.id.initialize({
-        client_id: CLIENT_ID,
-        callback: handleCredentialResponse,
-    });
-
-    google.accounts.id.renderButton(
-        document.getElementById("googleSignIn"), 
-        { theme: "outline", size: "large" }
-    );
-}
-
-// Handle Google Sign-In response
+// Handle Google Sign-In Response
 function handleCredentialResponse(response) {
+    console.log("Google Login Response:", response);
+
     const userToken = response.credential;
     document.cookie = `googleToken=${userToken}; path=/`;
 
-    document.getElementById("googleSignIn").style.display = "none";
     document.getElementById("logoutBtn").style.display = "block";
-    document.getElementById("saveNotes").style.display = "block"; // Show save button after login
+    document.getElementById("saveNotes").style.display = "block";
 
     loadGoogleDrive();
 }
@@ -44,7 +33,6 @@ function loadGoogleDrive() {
         });
 
         console.log("Google Drive API Loaded!");
-        loadNotesFromDrive();
     });
 }
 
@@ -75,17 +63,12 @@ document.getElementById("addNote").addEventListener("click", () => {
     createNoteElement();
 });
 
-// Auto-Save Notes to Google Drive when a note is changed
-function autoSaveNotes() {
-    clearTimeout(window.autoSaveTimer);
-    window.autoSaveTimer = setTimeout(saveNotesToDrive, 3000); // Auto-save after 3 seconds of inactivity
-}
-
-// Save notes to Google Drive when user clicks "Save Notes"
+// Save notes manually
 document.getElementById("saveNotes").addEventListener("click", saveNotesToDrive);
 
+// Save notes to Google Drive
 async function saveNotesToDrive() {
-    const accessToken = gapi.auth.getToken().access_token;
+    const accessToken = gapi.auth.getToken()?.access_token;
     if (!accessToken) {
         console.error("User not authenticated!");
         return;
@@ -93,15 +76,14 @@ async function saveNotesToDrive() {
 
     const allNotes = document.querySelectorAll(".note textarea");
     const notesArray = Array.from(allNotes).map(note => note.value);
+    const fileContent = notesArray.join("\n---\n");
 
     const fileMetadata = {
         name: "PostItNotes.txt",
         mimeType: "text/plain"
     };
 
-    const fileContent = notesArray.join("\n---\n"); // Separate notes with ---
     const fileBlob = new Blob([fileContent], { type: 'text/plain' });
-
     const form = new FormData();
     form.append("metadata", new Blob([JSON.stringify(fileMetadata)], { type: "application/json" }));
     form.append("file", fileBlob);
@@ -116,39 +98,12 @@ async function saveNotesToDrive() {
     console.log("Notes saved to Google Drive:", uploadData);
 }
 
-// Load Notes from Google Drive on Login
-async function loadNotesFromDrive() {
-    const accessToken = gapi.auth.getToken().access_token;
-    if (!accessToken) {
-        console.error("User not authenticated!");
-        return;
-    }
-
-    const response = await fetch('https://www.googleapis.com/drive/v3/files?q=name="PostItNotes.txt"&fields=files(id,name)', {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${accessToken}` },
+// Initialize Google Auth when the page loads
+window.onload = () => {
+    google.accounts.id.initialize({
+        client_id: CLIENT_ID,
+        callback: handleCredentialResponse,
     });
 
-    const data = await response.json();
-    if (data.files.length > 0) {
-        const fileId = data.files[0].id;
-
-        // Fetch file content
-        const fileResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-            method: 'GET',
-            headers: { Authorization: `Bearer ${accessToken}` },
-        });
-
-        const fileText = await fileResponse.text();
-        const notesArray = fileText.split("\n---\n");
-
-        // Load notes into the UI
-        document.getElementById("notesContainer").innerHTML = "";
-        notesArray.forEach(noteText => createNoteElement(noteText));
-    }
-}
-
-// Initialize Google Auth
-window.onload = () => {
-    initGoogleAuth();
+    google.accounts.id.prompt();
 };

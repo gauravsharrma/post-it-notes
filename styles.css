@@ -20,18 +20,14 @@ header p {
     color: #666;
 }
 
-main {
-    max-width: 800px;
-    margin: auto;
-}
-
-#addNote {
+#addNote, #saveNotes {
     padding: 10px;
     font-size: 16px;
     background: #ffcc00;
     border: none;
     cursor: pointer;
     border-radius: 5px;
+    margin: 10px;
 }
 
 #notesContainer {

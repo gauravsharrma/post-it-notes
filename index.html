@@ -6,8 +6,9 @@
     <title>Post-It Notes Manager - Google Sync</title>
     <meta name="description" content="Manage sticky notes online and sync them to Google Drive.">
     <link rel="stylesheet" href="styles.css">
+
+    <!-- Google Identity Services API -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://apis.google.com/js/api.js"></script>
 </head>
 <body>
 
@@ -17,7 +18,15 @@
     </header>
 
     <!-- Google Sign-In Button -->
-    <div id="googleSignIn"></div>
+    <div id="g_id_onload"
+         data-client_id="YOUR_GOOGLE_CLIENT_ID"
+         data-context="signin"
+         data-ux_mode="popup"
+         data-callback="handleCredentialResponse"
+         data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin" data-type="standard"></div>
+
     <button id="logoutBtn" style="display: none;" onclick="logout()">Logout</button>
 
     <!-- Notes Section -->
