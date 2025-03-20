@@ -1,5 +1,4 @@
 const CLIENT_ID = '720910107898-8id1nrg0o8q0unds8u90srtkuutn0837.apps.googleusercontent.com';
-const API_KEY = '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';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 function autoSaveNotes() {
