@@ -2,6 +2,10 @@ const CLIENT_ID = '720910107898-8id1nrg0o8q0unds8u90srtkuutn0837.apps.googleuser
 const API_KEY = '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';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
+function autoSaveNotes() {
+    console.log("Auto-saving notes...");
+    saveNotesToDrive();
+}
 
 // Handle Google Sign-In Response
 function handleCredentialResponse(response) {
@@ -24,6 +28,11 @@ function logout() {
 
 // Load Google Drive API
 function loadGoogleDrive() {
+    if (typeof gapi === 'undefined') {
+        console.error("Google API (gapi) is not loaded yet.");
+        return;
+    }
+
     gapi.load("client:auth2", async () => {
         await gapi.client.init({
             apiKey: API_KEY,
@@ -31,7 +40,6 @@ function loadGoogleDrive() {
             discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
             scope: SCOPES,
         });
-
         console.log("Google Drive API Loaded!");
     });
 }
