@@ -1,33 +1,46 @@
-async function saveNotesToDrive() {
-    const token = document.cookie.replace(/(?:(?:^|.*;\s*)googleToken\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+const { google } = require('googleapis');
 
-    if (!token) {
-        console.error('User not authenticated!');
-        return;
+exports.handler = async (event, context) => {
+    if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, body: 'Method Not Allowed' };
     }
-
-    const allNotes = document.querySelectorAll('.note textarea');
-    const notesArray = Array.from(allNotes).map((note) => note.value);
 
     try {
-        const response = await fetch('/.netlify/functions/save-notes', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ token: token, notes: notesArray }),
+        const data = JSON.parse(event.body);
+        const token = data.token;
+        const notes = data.notes;
+
+        // Verify the JWT token
+        const ticket = await google.auth.verifyIdToken({
+            idToken: token,
+            audience: '720910107898-8id1nrg0o8q0unds8u90srtkuutn0837.apps.googleusercontent.com', //Replace with you client ID.
         });
 
-        const data = await response.json();
-        if (response.ok) {
-            console.log('Notes saved to Google Drive:', data);
-            // Optionally provide user feedback here
-        } else {
-            console.error('Failed to save notes:', data);
-            // Optionally provide user feedback here
-        }
-    } catch (error) {
-        console.error('Error saving notes:', error);
-        // Optionally provide user feedback here
-    }
-}
+        const payload = ticket.getPayload();
+        const userId = payload['sub'];
+
+        // Authenticate with Google Drive API
+        const auth = new google.auth.OAuth2({
+            clientId: 'YOUR_CLIENT_ID', //Replace with you client ID.
+        });
+        auth.setCredentials({ id_token: token });
+        const drive = google.drive({ version: 'v3', auth });
+
+        // Combine notes into a single string
+        const fileContent = notes.join('\n---\n');
+
+        // Upload the file to Google Drive
+        const fileMetadata = {
+            name: 'PostItNotes.txt',
+            mimeType: 'text/plain',
+        };
+        const media = {
+            mimeType: 'text/plain',
+            body: fileContent,
+        };
+
+        const response = await drive.files.create({
+            resource: fileMetadata,
+            media: media,
+            fields: 'id',
+        });
