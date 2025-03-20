@@ -3,46 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Online Post-It Notes Manager App | Efficient Note-Taking Tool</title>
-    <meta name="description" content="Manage your notes efficiently with our online Post-It Notes Manager App. Add, edit, and delete sticky notes seamlessly.">
+    <title>Post-It Notes Manager - Google Sync</title>
+    <meta name="description" content="Manage sticky notes online and sync them to Google Drive.">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js"></script>
 </head>
 <body>
 
     <header>
-        <h1>Online Post-It Notes Manager</h1>
-        <p>Your efficient solution for digital note-taking.</p>
+        <h1>Post-It Notes Manager</h1>
+        <p>Sync your notes to Google Drive for access anywhere!</p>
     </header>
 
-    <main>
-        <section>
-            <h2>Features of Our Note-Taking App</h2>
-            <ul>
-                <li>Create and manage sticky notes online.</li>
-                <li>Save notes securely in local storage.</li>
-                <li>Responsive design for all devices.</li>
-            </ul>
-        </section>
+    <!-- Google Sign-In Button -->
+    <div id="googleSignIn"></div>
+    <button id="logoutBtn" style="display: none;" onclick="logout()">Logout</button>
 
-        <section>
-            <h2>Manage Your Notes</h2>
-            <button id="addNote">+ Add Note</button>
-            <div id="notesContainer"></div>
-        </section>
-    </main>
+    <!-- Notes Section -->
+    <button id="addNote">+ Add Note</button>
+    <div id="notesContainer"></div>
 
     <footer>
-        <p>&copy; 2025 Post-It Notes Manager App. All rights reserved.</p>
+        <p>&copy; 2025 Post-It Notes Manager. All rights reserved.</p>
     </footer>
 
     <script src="script.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-<div id="g_id_onload"
-     data-client_id="720910107898-8id1nrg0o8q0unds8u90srtkuutn0837.apps.googleusercontent.com"
-     data-callback="handleCredentialResponse">
-</div>
-<div class="g_id_signin" data-type="standard"></div>
-
-
 </body>
 </html>
