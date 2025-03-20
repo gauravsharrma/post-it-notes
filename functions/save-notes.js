@@ -21,7 +21,7 @@ exports.handler = async (event, context) => {
 
         // Authenticate with Google Drive API
         const auth = new google.auth.OAuth2({
-            clientId: 'YOUR_CLIENT_ID', //Replace with you client ID.
+            clientId: '720910107898-8id1nrg0o8q0unds8u90srtkuutn0837.apps.googleusercontent.com', //Replace with you client ID.
         });
         auth.setCredentials({ id_token: token });
         const drive = google.drive({ version: 'v3', auth });
