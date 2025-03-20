@@ -9,28 +9,25 @@ function handleCredentialResponse(response) {
 
     const idToken = response.credential;
 
-    fetch("https://oauth2.googleapis.com/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-            client_id: CLIENT_ID,
-            client_secret: CLIENT_SECRET,
-            redirect_uri: "https://post-it-notes.netlify.app/auth/google/callback",
-            grant_type: "authorization_code",
-            code: idToken
-        }),
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.access_token) {
-            document.cookie = `googleAccessToken=${data.access_token}; path=/`;
-            console.log("Access Token Received:", data.access_token);
+    // Initialize gapi if not already loaded
+    gapi.load("client:auth2", async () => {
+        await gapi.client.init({
+            apiKey: API_KEY,
+            clientId: CLIENT_ID,
+            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+            scope: SCOPES,
+        });
+
+        const authInstance = gapi.auth2.getAuthInstance();
+        authInstance.signIn().then(user => {
+            const authResponse = user.getAuthResponse();
+            document.cookie = `googleAccessToken=${authResponse.access_token}; path=/`;
+            console.log("Access Token Received:", authResponse.access_token);
             loadGoogleDrive();
-        } else {
-            console.error("Failed to get Access Token:", data);
-        }
-    })
-    .catch(err => console.error("Token Exchange Error:", err));
+        }).catch(error => {
+            console.error("Google Sign-In Error:", error);
+        });
+    });
 }
 
 // Logout function
