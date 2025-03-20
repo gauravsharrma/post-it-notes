@@ -62,10 +62,10 @@ document.getElementById("saveNotes").addEventListener("click", saveNotesToDrive)
 // Save notes to Google Drive
 async function saveNotesToDrive() {
     // const accessToken = gapi.auth.getToken()?.access_token;
-    if (!accessToken) {
-        console.error("User not authenticated!");
-        return;
-    }
+    //if (!accessToken) {
+    //    console.error("User not authenticated!");
+    //    return;
+    //}
 
     const allNotes = document.querySelectorAll(".note textarea");
     const notesArray = Array.from(allNotes).map(note => note.value);
