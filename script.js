@@ -7,7 +7,6 @@ const SCOPES = 'https://www.googleapis.com/auth/drive.file openid email profile'
 function handleCredentialResponse(response) {
     console.log("Google Login Response:", response);
 
-    // Store the ID token for later use (optional)
     const idToken = response.credential;
 
     // Initialize Google Auth API
