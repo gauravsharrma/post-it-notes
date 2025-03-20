@@ -2,6 +2,7 @@ const CLIENT_ID = '720910107898-8id1nrg0o8q0unds8u90srtkuutn0837.apps.googleuser
 const API_KEY = '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';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
+
 function initGoogleAuth() {
     google.accounts.id.initialize({
         client_id: CLIENT_ID,
@@ -19,11 +20,10 @@ function handleCredentialResponse(response) {
     const userToken = response.credential;
     document.cookie = `googleToken=${userToken}; path=/`;
 
-    // Hide login button, show logout button
     document.getElementById("googleSignIn").style.display = "none";
     document.getElementById("logoutBtn").style.display = "block";
+    document.getElementById("saveNotes").style.display = "block"; // Show save button after login
 
-    // Load Google Drive API
     loadGoogleDrive();
 }
 
@@ -44,6 +44,7 @@ function loadGoogleDrive() {
         });
 
         console.log("Google Drive API Loaded!");
+        loadNotesFromDrive();
     });
 }
 
@@ -54,14 +55,14 @@ function createNoteElement(text = "") {
 
     const textarea = document.createElement("textarea");
     textarea.value = text;
-    textarea.addEventListener("input", () => saveNotesToDrive());
+    textarea.addEventListener("input", () => autoSaveNotes());
 
     const deleteBtn = document.createElement("button");
     deleteBtn.classList.add("delete-btn");
     deleteBtn.innerText = "X";
     deleteBtn.addEventListener("click", () => {
         note.remove();
-        saveNotesToDrive();
+        autoSaveNotes();
     });
 
     note.appendChild(textarea);
@@ -72,10 +73,17 @@ function createNoteElement(text = "") {
 // Add new note
 document.getElementById("addNote").addEventListener("click", () => {
     createNoteElement();
-    saveNotesToDrive();
 });
 
-// Save notes to Google Drive
+// Auto-Save Notes to Google Drive when a note is changed
+function autoSaveNotes() {
+    clearTimeout(window.autoSaveTimer);
+    window.autoSaveTimer = setTimeout(saveNotesToDrive, 3000); // Auto-save after 3 seconds of inactivity
+}
+
+// Save notes to Google Drive when user clicks "Save Notes"
+document.getElementById("saveNotes").addEventListener("click", saveNotesToDrive);
+
 async function saveNotesToDrive() {
     const accessToken = gapi.auth.getToken().access_token;
     if (!accessToken) {
@@ -106,6 +114,38 @@ async function saveNotesToDrive() {
 
     const uploadData = await uploadResponse.json();
     console.log("Notes saved to Google Drive:", uploadData);
+}
+
+// Load Notes from Google Drive on Login
+async function loadNotesFromDrive() {
+    const accessToken = gapi.auth.getToken().access_token;
+    if (!accessToken) {
+        console.error("User not authenticated!");
+        return;
+    }
+
+    const response = await fetch('https://www.googleapis.com/drive/v3/files?q=name="PostItNotes.txt"&fields=files(id,name)', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    const data = await response.json();
+    if (data.files.length > 0) {
+        const fileId = data.files[0].id;
+
+        // Fetch file content
+        const fileResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        const fileText = await fileResponse.text();
+        const notesArray = fileText.split("\n---\n");
+
+        // Load notes into the UI
+        document.getElementById("notesContainer").innerHTML = "";
+        notesArray.forEach(noteText => createNoteElement(noteText));
+    }
 }
 
 // Initialize Google Auth
