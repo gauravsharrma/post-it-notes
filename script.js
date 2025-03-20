@@ -1,5 +1,5 @@
-const CLIENT_ID = '720910107898-8id1nrg0o8q0unds8u90srtkuutn0837.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const CLIENT_ID = '720910107898-8id1nrg0o8q0unds8u90srtkuutn0837.apps.googleusercontent.com
+';
 
 function autoSaveNotes() {
     console.log("Auto-saving notes...");
@@ -15,18 +15,12 @@ function handleCredentialResponse(response) {
 
     document.getElementById("logoutBtn").style.display = "block";
     document.getElementById("saveNotes").style.display = "block";
-
-    loadGoogleDrive();
 }
 
 // Logout function
 function logout() {
     document.cookie = "googleToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     location.reload();
-}
-
-function loadGoogleDrive() {
-    console.log("loadGoogleDrive function called, but is no longer needed.");
 }
 
 // Create Notes in UI
@@ -61,34 +55,37 @@ document.getElementById("saveNotes").addEventListener("click", saveNotesToDrive)
 
 // Save notes to Google Drive
 async function saveNotesToDrive() {
-    // const accessToken = gapi.auth.getToken()?.access_token;
-    //if (!accessToken) {
-    //    console.error("User not authenticated!");
-    //    return;
-    //}
+    const token = document.cookie.replace(/(?:(?:^|.*;\s*)googleToken\s*\=\s*([^;]*).*$)|^.*$/, "$1");
 
-    const allNotes = document.querySelectorAll(".note textarea");
-    const notesArray = Array.from(allNotes).map(note => note.value);
-    const fileContent = notesArray.join("\n---\n");
+    if (!token) {
+        console.error('User not authenticated!');
+        return;
+    }
 
-    const fileMetadata = {
-        name: "PostItNotes.txt",
-        mimeType: "text/plain"
-    };
+    const allNotes = document.querySelectorAll('.note textarea');
+    const notesArray = Array.from(allNotes).map((note) => note.value);
 
-    const fileBlob = new Blob([fileContent], { type: 'text/plain' });
-    const form = new FormData();
-    form.append("metadata", new Blob([JSON.stringify(fileMetadata)], { type: "application/json" }));
-    form.append("file", fileBlob);
+    try {
+        const response = await fetch('/.netlify/functions/save-notes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token: token, notes: notesArray }),
+        });
 
-    const uploadResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-        method: 'POST',
-        // headers: { Authorization: `Bearer ${accessToken}` },
-        body: form,
-    });
-
-    const uploadData = await uploadResponse.json();
-    console.log("Notes saved to Google Drive:", uploadData);
+        const data = await response.json();
+        if (response.ok) {
+            console.log('Notes saved to Google Drive:', data);
+            // Optionally provide user feedback here
+        } else {
+            console.error('Failed to save notes:', data);
+            // Optionally provide user feedback here
+        }
+    } catch (error) {
+        console.error('Error saving notes:', error);
+        // Optionally provide user feedback here
+    }
 }
 
 // Initialize Google Auth when the page loads
