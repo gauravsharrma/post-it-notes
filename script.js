@@ -83,7 +83,7 @@ async function saveNotesToDrive() {
 
     const uploadResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
+        // headers: { Authorization: `Bearer ${accessToken}` },
         body: form,
     });
 
