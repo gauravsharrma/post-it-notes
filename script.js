@@ -7,9 +7,10 @@ const SCOPES = 'https://www.googleapis.com/auth/drive.file openid email profile'
 function handleCredentialResponse(response) {
     console.log("Google Login Response:", response);
 
+    // Store the ID token for later use (optional)
     const idToken = response.credential;
 
-    // Initialize gapi if not already loaded
+    // Initialize Google Auth API
     gapi.load("client:auth2", async () => {
         await gapi.client.init({
             apiKey: API_KEY,
@@ -19,11 +20,17 @@ function handleCredentialResponse(response) {
         });
 
         const authInstance = gapi.auth2.getAuthInstance();
+        
         authInstance.signIn().then(user => {
             const authResponse = user.getAuthResponse();
-            document.cookie = `googleAccessToken=${authResponse.access_token}; path=/`;
-            console.log("Access Token Received:", authResponse.access_token);
-            loadGoogleDrive();
+            
+            if (authResponse.access_token) {
+                document.cookie = `googleAccessToken=${authResponse.access_token}; path=/`;
+                console.log("Access Token Received:", authResponse.access_token);
+                loadGoogleDrive();
+            } else {
+                console.error("Failed to retrieve access token.");
+            }
         }).catch(error => {
             console.error("Google Sign-In Error:", error);
         });
